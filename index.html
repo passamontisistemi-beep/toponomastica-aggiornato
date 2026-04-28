@@ -2,10 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"  content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comune di Cagliari - Nuova Toponomastica Aumentata</title>
-
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
@@ -25,7 +23,7 @@ min-height:100vh;
 padding:10px;
 }
 
-/* MOBILE 9:16 */
+/* FORMATO 9:16 */
 #phone{
 width:min(100vw,390px);
 aspect-ratio:9/16;
@@ -54,7 +52,7 @@ text-align:center;
 padding:6px;
 }
 
-/* MAP */
+/* MAPPA */
 #map{
 height:78%;
 width:100%;
@@ -153,7 +151,7 @@ color:#fff;
 background:#ddd;
 }
 
-/* MARKERS */
+/* POI */
 .poiWrap{
 text-align:center;
 }
@@ -220,7 +218,6 @@ text-align:center;
 
 </div>
 
-<!-- JS Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
@@ -241,7 +238,7 @@ maxZoom:18,
 attribution:"© OpenStreetMap"
 }).addTo(map);
 
-/* USER POSITION */
+/* TU SEI QUI */
 const userLat = 39.2238;
 const userLng = 9.1217;
 
@@ -258,7 +255,7 @@ iconSize:[100,60]
 
 L.marker([userLat,userLng],{icon:userIcon}).addTo(map);
 
-/* POI */
+/* POI CAGLIARI */
 const pois = [
 {
 name:"Basilica di Bonaria",
@@ -311,7 +308,6 @@ showCard(p);
 
 });
 
-/* DISTANZA */
 function km(lat1, lon1, lat2, lon2){
 const R = 6371;
 const dLat = (lat2-lat1) * Math.PI/180;
@@ -327,7 +323,6 @@ const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 return (R*c).toFixed(2);
 }
 
-/* CARD */
 window.showCard = function(p){
 document.getElementById("poiTitle").innerText = p.name;
 document.getElementById("poiDesc").innerText = p.desc;
