@@ -7,12 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,Helvetica,sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
 
 body{
 background:#dfe7ee;
@@ -35,10 +30,9 @@ flex-direction:column;
 position:relative;
 }
 
-/* HEADER IMMAGINE */
+/* HEADER */
 #headerImg{
 width:100%;
-height:auto;
 display:block;
 }
 
@@ -110,15 +104,8 @@ z-index:9999;
 display:none;
 }
 
-.poiCard h2{
-font-size:18px;
-margin-bottom:8px;
-}
-
-.poiCard p{
-font-size:14px;
-margin:5px 0;
-}
+.poiCard h2{font-size:18px;margin-bottom:8px;}
+.poiCard p{font-size:14px;margin:5px 0;}
 
 .poiCard button{
 width:100%;
@@ -130,16 +117,10 @@ font-weight:bold;
 cursor:pointer;
 }
 
-.go{
-background:#000;
-color:#fff;
-}
+.go{background:#000;color:#fff;}
+.close{background:#ddd;}
 
-.close{
-background:#ddd;
-}
-
-/* POI */
+/* MARKERS */
 .poiWrap{text-align:center;}
 
 .poiDot{
@@ -182,10 +163,9 @@ text-align:center;
 </div>
 
 <footer>
-
 <div class="rss">
 <div class="track">
-🎉 Eventi Cagliari • Concerto Piazza Yenne ore 21:00 • Mostra Bastione ore 18:00 • Festival Marina ore 20:30 • Mercatino ore 10:00 •
+🎉 Eventi Cagliari • Concerto Piazza Yenne ore 21:00 • Mostra Bastione ore 18:00 • Festival Marina ore 20:30 •
 </div>
 </div>
 
@@ -199,7 +179,6 @@ text-align:center;
 </div>
 
 <div class="brand">PASSAMONTI_COMMUNICATION</div>
-
 </footer>
 
 </div>
@@ -207,7 +186,7 @@ text-align:center;
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+document.addEventListener("DOMContentLoaded",function(){
 
 const map=L.map("map",{
 zoomControl:false,
@@ -221,9 +200,9 @@ touchZoom:false
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-/* TU SEI QUI */
-const userLat=39.2238;
-const userLng=9.1217;
+let userLat=39.2238;
+let userLng=9.1217;
+let userMarker=null;
 
 const userIcon=L.divIcon({
 className:"",
@@ -236,27 +215,72 @@ html:`
 iconSize:[100,60]
 });
 
-L.marker([userLat,userLng],{icon:userIcon}).addTo(map);
+/* GEOLOCALIZZAZIONE REALE GPS */
+function setUserPosition(lat,lng){
+userLat=lat;
+userLng=lng;
 
-/* POI ESTESI */
+if(userMarker){
+userMarker.setLatLng([lat,lng]);
+}else{
+userMarker=L.marker([lat,lng],{icon:userIcon}).addTo(map);
+}
+
+map.setView([lat,lng],15);
+}
+
+if(navigator.geolocation){
+
+navigator.geolocation.getCurrentPosition(
+function(pos){
+setUserPosition(
+pos.coords.latitude,
+pos.coords.longitude
+);
+},
+function(err){
+setUserPosition(userLat,userLng);
+},
+{
+enableHighAccuracy:true,
+timeout:10000,
+maximumAge:0
+}
+);
+
+/* AGGIORNA MENTRE CAMMINI */
+navigator.geolocation.watchPosition(
+function(pos){
+setUserPosition(
+pos.coords.latitude,
+pos.coords.longitude
+);
+},
+function(err){},
+{
+enableHighAccuracy:true,
+maximumAge:5000,
+timeout:10000
+}
+);
+
+}else{
+setUserPosition(userLat,userLng);
+}
+
+/* POI */
 const pois=[
 ["Basilica di Bonaria",39.2107,9.1294,"Santuario simbolo di Cagliari.","Bus 5 - 6","#0055ff"],
 ["Orto Botanico",39.2231,9.1116,"Giardino botanico storico.","Bus 1 - 9","#00aa44"],
 ["Bastione Saint Remy",39.2168,9.1178,"Belvedere panoramico.","Bus 6 - 7","#ff8800"],
 ["Poetto",39.1999,9.1535,"Spiaggia cittadina.","Bus PF - PQ","#00bcd4"],
 ["Duomo di Cagliari",39.2190,9.1160,"Cattedrale storica.","Bus 8","#8e44ad"],
-["Museo Archeologico",39.2210,9.1122,"Museo nazionale archeologico.","Bus 1","#e91e63"],
-["Anfiteatro Romano",39.2260,9.1110,"Sito archeologico romano.","Bus 9","#795548"],
-["Torre dell'Elefante",39.2198,9.1147,"Torre medievale storica.","Bus 8","#607d8b"],
-["Marina di Cagliari",39.2138,9.1188,"Quartiere storico sul porto.","Bus PF","#009688"],
-["Parco di Monte Urpinu",39.2208,9.1360,"Grande parco urbano panoramico.","Bus 3","#4caf50"]
+["Museo Archeologico",39.2210,9.1122,"Museo nazionale archeologico.","Bus 1","#e91e63"]
 ];
 
 pois.forEach(function(p){
 
-const obj={
-name:p[0],lat:p[1],lng:p[2],desc:p[3],transport:p[4],color:p[5]
-};
+const obj={name:p[0],lat:p[1],lng:p[2],desc:p[3],transport:p[4],color:p[5]};
 
 const icon=L.divIcon({
 className:"",
@@ -295,7 +319,10 @@ document.getElementById("poiTransport").innerText="Trasporti: "+p.transport;
 document.getElementById("poiDistance").innerText="Distanza: "+km(userLat,userLng,p.lat,p.lng)+" km";
 
 document.getElementById("goBtn").onclick=function(){
-window.open("https://www.google.com/maps/dir/"+userLat+","+userLng+"/"+p.lat+","+p.lng,"_blank");
+window.open(
+"https://www.google.com/maps/dir/"+userLat+","+userLng+"/"+p.lat+","+p.lng,
+"_blank"
+);
 };
 
 document.getElementById("card").style.display="block";
