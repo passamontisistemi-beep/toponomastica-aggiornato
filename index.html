@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comune di Cagliari - Nuova Toponomastica Aumentata</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+background:#dfe7ee;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:10px;
+}
+
+/* MOBILE 9:16 */
+#phone{
+width:min(100vw,390px);
+aspect-ratio:9/16;
+background:#fff;
+border-radius:28px;
+overflow:hidden;
+box-shadow:0 20px 60px rgba(0,0,0,.25);
+display:flex;
+flex-direction:column;
+position:relative;
+}
+
+/* HEADER */
+header{
+height:8%;
+min-height:52px;
+background:#000;
+color:#fff;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:17px;
+font-weight:bold;
+letter-spacing:.5px;
+text-align:center;
+padding:6px;
+}
+
+/* MAP */
+#map{
+height:78%;
+width:100%;
+}
+
+/* FOOTER */
+footer{
+height:14%;
+min-height:82px;
+background:#111;
+color:#fff;
+display:flex;
+flex-direction:column;
+justify-content:center;
+}
+
+.rss{
+height:22px;
+overflow:hidden;
+white-space:nowrap;
+border-top:1px solid rgba(255,255,255,.08);
+border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.track{
+display:inline-block;
+padding-left:100%;
+animation:scroll 28s linear infinite;
+line-height:22px;
+font-size:12px;
+}
+
+.brand{
+flex:1;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:10px;
+letter-spacing:1px;
+color:#ddd;
+}
+
+a{
+color:#00ffd0;
+text-decoration:none;
+font-weight:bold;
+margin-right:28px;
+}
+
+@keyframes scroll{
+0%{transform:translateX(0);}
+100%{transform:translateX(-100%);}
+}
+
+/* CARD */
+.poiCard{
+position:absolute;
+top:10%;
+left:12px;
+right:12px;
+background:#fff;
+padding:14px;
+border-radius:18px;
+box-shadow:0 15px 35px rgba(0,0,0,.25);
+z-index:9999;
+display:none;
+}
+
+.poiCard h2{
+font-size:18px;
+margin-bottom:8px;
+color:#000;
+}
+
+.poiCard p{
+font-size:14px;
+margin:5px 0;
+}
+
+.poiCard button{
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+margin-top:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.go{
+background:#000;
+color:#fff;
+}
+
+.close{
+background:#ddd;
+}
+
+/* MARKERS */
+.poiWrap{
+text-align:center;
+}
+
+.poiDot{
+width:28px;
+height:28px;
+border-radius:50%;
+border:3px solid #fff;
+margin:auto;
+box-shadow:0 3px 8px rgba(0,0,0,.3);
+}
+
+.poiText{
+font-size:11px;
+font-weight:bold;
+color:#111;
+margin-top:4px;
+width:110px;
+margin-left:-41px;
+line-height:12px;
+text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div id="phone">
+
+<header>COMUNE DI CAGLIARI</header>
+
+<div id="map"></div>
+
+<div class="poiCard" id="card">
+<h2 id="poiTitle"></h2>
+<p id="poiDesc"></p>
+<p id="poiTransport"></p>
+<p id="poiDistance"></p>
+<button class="go" id="goBtn">PORTAMI QUI</button>
+<button class="close" onclick="closeCard()">CHIUDI</button>
+</div>
+
+<footer>
+
+<div class="rss">
+<div class="track">
+🎉 Concerto Piazza Yenne ore 21:00 • Mostra Bastione ore 18:00 • Festival Marina ore 20:30 •
+</div>
+</div>
+
+<div class="rss">
+<div class="track">
+<a href="tel:41211">Taxi 41211</a>
+<a href="tel:606121">Guardia Medica</a>
+<a href="tel:603333">Veterinario</a>
+<a href="tel:112">Emergenze</a>
+</div>
+</div>
+
+<div class="brand">PASSAMONTI_COMMUNICATION</div>
+
+</footer>
+
+</div>
+
+<!-- JS Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+const map = L.map("map",{
+zoomControl:false,
+dragging:false,
+scrollWheelZoom:false,
+doubleClickZoom:false,
+boxZoom:false,
+keyboard:false,
+touchZoom:false
+}).setView([39.2238,9.1217],14);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+maxZoom:18,
+attribution:"© OpenStreetMap"
+}).addTo(map);
+
+/* USER POSITION */
+const userLat = 39.2238;
+const userLng = 9.1217;
+
+const userIcon = L.divIcon({
+className:"",
+html:`
+<div style="text-align:center">
+<div style="width:30px;height:30px;background:red;border-radius:50%;border:4px solid white;margin:auto"></div>
+<div style="font-size:12px;font-weight:bold;color:red;margin-top:4px;">TU SEI QUI</div>
+</div>
+`,
+iconSize:[100,60]
+});
+
+L.marker([userLat,userLng],{icon:userIcon}).addTo(map);
+
+/* POI */
+const pois = [
+{
+name:"Basilica di Bonaria",
+lat:39.2107,lng:9.1294,
+desc:"Santuario simbolo della città.",
+transport:"Bus 5 - 6",
+color:"#0055ff"
+},
+{
+name:"Orto Botanico",
+lat:39.2231,lng:9.1116,
+desc:"Giardino botanico storico.",
+transport:"Bus 1 - 9",
+color:"#00aa44"
+},
+{
+name:"Bastione Saint Remy",
+lat:39.2168,lng:9.1178,
+desc:"Belvedere panoramico.",
+transport:"Bus 6 - 7",
+color:"#ff8800"
+},
+{
+name:"Poetto",
+lat:39.1999,lng:9.1535,
+desc:"Spiaggia cittadina.",
+transport:"Bus PF - PQ",
+color:"#00bcd4"
+}
+];
+
+pois.forEach(function(p){
+
+const icon = L.divIcon({
+className:"",
+html:`
+<div class="poiWrap">
+<div class="poiDot" style="background:${p.color};"></div>
+<div class="poiText">${p.name}</div>
+</div>
+`,
+iconSize:[100,60]
+});
+
+L.marker([p.lat,p.lng],{icon:icon})
+.addTo(map)
+.on("click",function(){
+showCard(p);
+});
+
+});
+
+/* DISTANZA */
+function km(lat1, lon1, lat2, lon2){
+const R = 6371;
+const dLat = (lat2-lat1) * Math.PI/180;
+const dLon = (lon2-lon1) * Math.PI/180;
+
+const a =
+Math.sin(dLat/2) * Math.sin(dLat/2) +
+Math.cos(lat1*Math.PI/180) *
+Math.cos(lat2*Math.PI/180) *
+Math.sin(dLon/2) * Math.sin(dLon/2);
+
+const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+return (R*c).toFixed(2);
+}
+
+/* CARD */
+window.showCard = function(p){
+document.getElementById("poiTitle").innerText = p.name;
+document.getElementById("poiDesc").innerText = p.desc;
+document.getElementById("poiTransport").innerText = "Trasporti: " + p.transport;
+document.getElementById("poiDistance").innerText = "Distanza: " + km(userLat,userLng,p.lat,p.lng) + " km";
+
+document.getElementById("goBtn").onclick = function(){
+window.open(
+"https://www.google.com/maps/dir/" +
+userLat + "," + userLng + "/" + p.lat + "," + p.lng,
+"_blank"
+);
+};
+
+document.getElementById("card").style.display = "block";
+}
+
+window.closeCard = function(){
+document.getElementById("card").style.display = "none";
+}
+
+});
+</script>
+
+</body>
+</html>
