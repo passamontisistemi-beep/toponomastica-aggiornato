@@ -24,11 +24,17 @@ position:relative;
 #map{flex:1;width:100%;}
 
 footer{
-height:95px;background:#111;color:#fff;
-display:flex;flex-direction:column;justify-content:center;
+height:95px;
+background:#111;
+color:#fff;
+display:flex;
+flex-direction:column;
+justify-content:center;
 }
 .rss{
-height:24px;overflow:hidden;white-space:nowrap;
+height:24px;
+overflow:hidden;
+white-space:nowrap;
 border-top:1px solid rgba(255,255,255,.08);
 border-bottom:1px solid rgba(255,255,255,.08);
 }
@@ -36,14 +42,23 @@ border-bottom:1px solid rgba(255,255,255,.08);
 display:inline-block;
 padding-left:100%;
 animation:scroll 30s linear infinite;
-line-height:24px;font-size:12px;
+line-height:24px;
+font-size:12px;
 }
 .phoneLink{
-color:#00ffd0;text-decoration:none;font-weight:bold;margin-right:24px;
+color:#00ffd0;
+text-decoration:none;
+font-weight:bold;
+margin-right:24px;
 }
 .brand{
-flex:1;display:flex;align-items:center;justify-content:center;
-font-size:10px;letter-spacing:1px;color:#ddd;
+flex:1;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:10px;
+letter-spacing:1px;
+color:#ddd;
 }
 @keyframes scroll{
 0%{transform:translateX(0);}
@@ -53,7 +68,8 @@ font-size:10px;letter-spacing:1px;color:#ddd;
 .poiCard{
 position:absolute;
 top:28%;
-left:12px;right:12px;
+left:12px;
+right:12px;
 background:#fff;
 padding:14px;
 border-radius:18px;
@@ -64,8 +80,13 @@ display:none;
 .poiCard h2{font-size:18px;margin-bottom:8px;}
 .poiCard p{font-size:14px;margin:5px 0;}
 .poiCard button{
-width:100%;padding:10px;border:none;border-radius:10px;
-margin-top:8px;font-weight:bold;cursor:pointer;
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+margin-top:8px;
+font-weight:bold;
+cursor:pointer;
 }
 .go{background:#000;color:#fff;}
 .close{background:#ddd;}
@@ -76,7 +97,7 @@ margin-top:8px;font-weight:bold;cursor:pointer;
 
 <div id="phone">
 
-<img id="headerImg" src="Header in PNG 1080x260.png" alt="Header">
+<img id="headerImg" src="Header in PNG 1080x260.png" alt="Header Comune di Cagliari">
 
 <div id="map"></div>
 
@@ -126,11 +147,13 @@ touchZoom:false
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-let userLat=39.2238,userLng=9.1217;
+let userLat=39.2238;
+let userLng=9.1217;
 let userMarker=null;
 let poiLayer=L.layerGroup().addTo(map);
+let popupOpen=false;
 
-/* ICONA TU SEI QUI */
+/* ICONA UTENTE */
 function createUserIcon(via){
 return L.divIcon({
 className:"",
@@ -151,18 +174,6 @@ iconSize:[145,90]
 });
 }
 
-/* DISTANZA */
-function km(lat1,lon1,lat2,lon2){
-const R=6371;
-const dLat=(lat2-lat1)*Math.PI/180;
-const dLon=(lon2-lon1)*Math.PI/180;
-const a=Math.sin(dLat/2)**2+
-Math.cos(lat1*Math.PI/180)*
-Math.cos(lat2*Math.PI/180)*
-Math.sin(dLon/2)**2;
-return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
-}
-
 /* VIA */
 async function getStreetName(lat,lng){
 try{
@@ -178,9 +189,22 @@ return "Posizione rilevata";
 }
 }
 
-/* UTENTE */
+/* DISTANZA */
+function km(lat1,lon1,lat2,lon2){
+const R=6371;
+const dLat=(lat2-lat1)*Math.PI/180;
+const dLon=(lon2-lon1)*Math.PI/180;
+const a=Math.sin(dLat/2)**2+
+Math.cos(lat1*Math.PI/180)*
+Math.cos(lat2*Math.PI/180)*
+Math.sin(dLon/2)**2;
+return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+
+/* AGGIORNA UTENTE */
 async function updateUser(lat,lng){
-userLat=lat; userLng=lng;
+userLat=lat;
+userLng=lng;
 
 const via=await getStreetName(lat,lng);
 const icon=createUserIcon(via);
@@ -195,13 +219,15 @@ userMarker=L.marker([lat,lng],{icon}).addTo(map);
 map.setView([lat,lng],16);
 }
 
-/* ALGORITMO WIKIPEDIA QUI INTORNO CORRETTO */
+/* WIKIPEDIA QUI INTORNO */
 async function loadWikipediaPOI(lat,lng){
+
+if(popupOpen) return;
 
 poiLayer.clearLayers();
 
-let radius=800;       // raggio realistico
-let limit=10;         // max POI visibili
+let radius=800;
+let limit=10;
 let results=[];
 
 try{
@@ -220,15 +246,9 @@ radius+=500;
 }
 }
 
-/* Ordina per distanza */
-results.sort((a,b)=>{
-return a.dist - b.dist;
-});
-
-/* Limita a 10 */
+results.sort((a,b)=>a.dist-b.dist);
 results=results.slice(0,10);
 
-/* Disegna marker */
 results.forEach(function(item){
 
 const marker=L.circleMarker(
@@ -250,6 +270,8 @@ offset:[0,10]
 
 marker.on("click",function(){
 
+popupOpen=true;
+
 document.getElementById("poiTitle").innerText=item.title;
 document.getElementById("poiDesc").innerText="POI rilevato da Wikipedia - Qui Intorno";
 document.getElementById("poiDistance").innerText=
@@ -268,25 +290,21 @@ document.getElementById("card").style.display="block";
 });
 
 }catch(e){
-console.log("Errore Wikipedia",e);
+console.log(e);
 }
 }
 
-/* REFRESH TOTALE */
-function refreshAll(lat,lng){
-updateUser(lat,lng);
-loadWikipediaPOI(lat,lng);
-}
-
-/* GPS REALE */
+/* REFRESH COMPLETO */
+function refreshAll(){
 if(navigator.geolocation){
-
 navigator.geolocation.getCurrentPosition(
 function(pos){
-refreshAll(pos.coords.latitude,pos.coords.longitude);
+updateUser(pos.coords.latitude,pos.coords.longitude);
+loadWikipediaPOI(pos.coords.latitude,pos.coords.longitude);
 },
 function(err){
-refreshAll(userLat,userLng);
+updateUser(userLat,userLng);
+loadWikipediaPOI(userLat,userLng);
 },
 {
 enableHighAccuracy:true,
@@ -294,25 +312,21 @@ timeout:10000,
 maximumAge:0
 }
 );
-
-navigator.geolocation.watchPosition(
-function(pos){
-refreshAll(pos.coords.latitude,pos.coords.longitude);
-},
-function(err){},
-{
-enableHighAccuracy:true,
-maximumAge:10000,
-timeout:10000
 }
-);
-
-}else{
-refreshAll(userLat,userLng);
 }
 
+/* AVVIO */
+refreshAll();
+
+/* OGNI 5 MINUTI */
+setInterval(function(){
+refreshAll();
+},300000);
+
+/* CHIUDI */
 window.closeCard=function(){
 document.getElementById("card").style.display="none";
+popupOpen=false;
 }
 
 });
