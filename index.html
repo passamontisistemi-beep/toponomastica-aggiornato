@@ -7,7 +7,12 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
 
 body{
 background:#dfe7ee;
@@ -30,57 +35,22 @@ flex-direction:column;
 position:relative;
 }
 
-/* HEADER RIDISEGNATO */
-header{
-height:14%;
-min-height:105px;
-background:#000;
-color:#fff;
-display:flex;
-align-items:center;
-justify-content:center;
-gap:10px;
-padding:8px 12px;
-}
-
-#logo{
-width:74px;
-height:74px;
-object-fit:contain;
-flex-shrink:0;
-}
-
-#comune{
-font-size:18px;
-font-weight:bold;
-letter-spacing:.5px;
-line-height:1;
-}
-
-/* TITOLO */
-#projectTitle{
-height:5%;
-min-height:34px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:15px;
-font-weight:900;
-color:#000;
-background:#fff;
-border-bottom:1px solid #ddd;
+/* HEADER IMMAGINE */
+#headerImg{
+width:100%;
+height:auto;
+display:block;
 }
 
 /* MAPPA */
 #map{
-height:66%;
+flex:1;
 width:100%;
 }
 
 /* FOOTER */
 footer{
-height:15%;
-min-height:95px;
+height:95px;
 background:#111;
 color:#fff;
 display:flex;
@@ -129,7 +99,7 @@ color:#ddd;
 /* CARD */
 .poiCard{
 position:absolute;
-top:18%;
+top:28%;
 left:12px;
 right:12px;
 background:#fff;
@@ -140,8 +110,15 @@ z-index:9999;
 display:none;
 }
 
-.poiCard h2{font-size:18px;margin-bottom:8px;}
-.poiCard p{font-size:14px;margin:5px 0;}
+.poiCard h2{
+font-size:18px;
+margin-bottom:8px;
+}
+
+.poiCard p{
+font-size:14px;
+margin:5px 0;
+}
 
 .poiCard button{
 width:100%;
@@ -153,10 +130,16 @@ font-weight:bold;
 cursor:pointer;
 }
 
-.go{background:#000;color:#fff;}
-.close{background:#ddd;}
+.go{
+background:#000;
+color:#fff;
+}
 
-/* MARKERS */
+.close{
+background:#ddd;
+}
+
+/* POI */
 .poiWrap{text-align:center;}
 
 .poiDot{
@@ -185,12 +168,7 @@ text-align:center;
 
 <div id="phone">
 
-<header>
-<img id="logo" src="Logo Comune.png" alt="Logo Comune di Cagliari">
-<div id="comune">COMUNE DI CAGLIARI</div>
-</header>
-
-<div id="projectTitle">NUOVA TOPONOMASTICA AUMENTATA</div>
+<img id="headerImg" src="Header in PNG 1080x260.png" alt="Header Comune di Cagliari">
 
 <div id="map"></div>
 
@@ -204,6 +182,7 @@ text-align:center;
 </div>
 
 <footer>
+
 <div class="rss">
 <div class="track">
 🎉 Eventi Cagliari • Concerto Piazza Yenne ore 21:00 • Mostra Bastione ore 18:00 • Festival Marina ore 20:30 • Mercatino ore 10:00 •
@@ -220,6 +199,7 @@ text-align:center;
 </div>
 
 <div class="brand">PASSAMONTI_COMMUNICATION</div>
+
 </footer>
 
 </div>
@@ -227,7 +207,7 @@ text-align:center;
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded",function(){
+document.addEventListener("DOMContentLoaded", function(){
 
 const map=L.map("map",{
 zoomControl:false,
@@ -241,42 +221,57 @@ touchZoom:false
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-const userLat=39.2238,userLng=9.1217;
+/* TU SEI QUI */
+const userLat=39.2238;
+const userLng=9.1217;
 
 const userIcon=L.divIcon({
 className:"",
-html:`<div style="text-align:center">
+html:`
+<div style="text-align:center">
 <div style="width:30px;height:30px;background:red;border-radius:50%;border:4px solid white;margin:auto"></div>
 <div style="font-size:12px;font-weight:bold;color:red;margin-top:4px;">TU SEI QUI</div>
-</div>`,
+</div>
+`,
 iconSize:[100,60]
 });
 
 L.marker([userLat,userLng],{icon:userIcon}).addTo(map);
 
+/* POI ESTESI */
 const pois=[
 ["Basilica di Bonaria",39.2107,9.1294,"Santuario simbolo di Cagliari.","Bus 5 - 6","#0055ff"],
 ["Orto Botanico",39.2231,9.1116,"Giardino botanico storico.","Bus 1 - 9","#00aa44"],
 ["Bastione Saint Remy",39.2168,9.1178,"Belvedere panoramico.","Bus 6 - 7","#ff8800"],
 ["Poetto",39.1999,9.1535,"Spiaggia cittadina.","Bus PF - PQ","#00bcd4"],
 ["Duomo di Cagliari",39.2190,9.1160,"Cattedrale storica.","Bus 8","#8e44ad"],
-["Museo Archeologico",39.2210,9.1122,"Museo nazionale archeologico.","Bus 1","#e91e63"]
+["Museo Archeologico",39.2210,9.1122,"Museo nazionale archeologico.","Bus 1","#e91e63"],
+["Anfiteatro Romano",39.2260,9.1110,"Sito archeologico romano.","Bus 9","#795548"],
+["Torre dell'Elefante",39.2198,9.1147,"Torre medievale storica.","Bus 8","#607d8b"],
+["Marina di Cagliari",39.2138,9.1188,"Quartiere storico sul porto.","Bus PF","#009688"],
+["Parco di Monte Urpinu",39.2208,9.1360,"Grande parco urbano panoramico.","Bus 3","#4caf50"]
 ];
 
 pois.forEach(function(p){
 
-const obj={name:p[0],lat:p[1],lng:p[2],desc:p[3],transport:p[4],color:p[5]};
+const obj={
+name:p[0],lat:p[1],lng:p[2],desc:p[3],transport:p[4],color:p[5]
+};
 
 const icon=L.divIcon({
 className:"",
-html:`<div class="poiWrap">
+html:`
+<div class="poiWrap">
 <div class="poiDot" style="background:${obj.color};"></div>
 <div class="poiText">${obj.name}</div>
-</div>`,
+</div>
+`,
 iconSize:[120,60]
 });
 
-L.marker([obj.lat,obj.lng],{icon}).addTo(map).on("click",function(){showCard(obj);});
+L.marker([obj.lat,obj.lng],{icon})
+.addTo(map)
+.on("click",function(){showCard(obj);});
 
 });
 
@@ -284,8 +279,13 @@ function km(lat1,lon1,lat2,lon2){
 const R=6371;
 const dLat=(lat2-lat1)*Math.PI/180;
 const dLon=(lon2-lon1)*Math.PI/180;
-const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(2);
+const a=
+Math.sin(dLat/2)**2+
+Math.cos(lat1*Math.PI/180)*
+Math.cos(lat2*Math.PI/180)*
+Math.sin(dLon/2)**2;
+const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+return (R*c).toFixed(2);
 }
 
 window.showCard=function(p){
