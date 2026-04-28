@@ -105,28 +105,6 @@ cursor:pointer;
 
 .go{background:#000;color:#fff;}
 .close{background:#ddd;}
-
-.poiWrap{text-align:center;}
-
-.poiDot{
-width:28px;
-height:28px;
-border-radius:50%;
-border:3px solid #fff;
-margin:auto;
-box-shadow:0 3px 8px rgba(0,0,0,.3);
-}
-
-.poiText{
-font-size:10px;
-font-weight:bold;
-color:#111;
-margin-top:4px;
-width:120px;
-margin-left:-46px;
-line-height:11px;
-text-align:center;
-}
 </style>
 </head>
 
@@ -141,9 +119,8 @@ text-align:center;
 <div class="poiCard" id="card">
 <h2 id="poiTitle"></h2>
 <p id="poiDesc"></p>
-<p id="poiTransport"></p>
 <p id="poiDistance"></p>
-<button class="go" id="goBtn">PORTAMI QUI</button>
+<button class="go" id="goBtn">VEDI SU WIKIPEDIA</button>
 <button class="close" onclick="closeCard()">CHIUDI</button>
 </div>
 
@@ -181,15 +158,16 @@ doubleClickZoom:false,
 boxZoom:false,
 keyboard:false,
 touchZoom:false
-}).setView([39.2238,9.1217],13);
+}).setView([39.2238,9.1217],14);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
+let userMarker=null;
+let poiLayer=L.layerGroup().addTo(map);
 let userLat=39.2238;
 let userLng=9.1217;
-let userMarker=null;
-let streetName="Posizione rilevata";
 
+/* ICONA UTENTE */
 function createUserIcon(via){
 return L.divIcon({
 className:"",
@@ -206,23 +184,19 @@ padding:3px 8px;
 border-radius:8px;
 margin-top:4px;
 display:inline-block;
-">
-TU SEI QUI
-</div>
+">TU SEI QUI</div>
 
 <div style="
 font-size:10px;
 font-weight:bold;
 color:#000;
-background:rgba(255,255,255,.90);
+background:rgba(255,255,255,.9);
 padding:2px 6px;
 border-radius:8px;
 margin-top:3px;
 display:inline-block;
 max-width:130px;
-">
-${via}
-</div>
+">${via}</div>
 </div>
 `,
 iconSize:[145,90]
@@ -232,30 +206,27 @@ iconSize:[145,90]
 /* VIA */
 async function getStreetName(lat,lng){
 try{
-const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
-const res=await fetch(url);
+const res=await fetch(
+`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+);
 const data=await res.json();
-
-if(data.address){
 return data.address.road ||
 data.address.pedestrian ||
 data.address.suburb ||
 data.address.city ||
 "Posizione rilevata";
-}
-return "Posizione rilevata";
 }catch(e){
 return "Posizione rilevata";
 }
 }
 
-async function setUserPosition(lat,lng){
+/* AGGIORNA UTENTE */
+async function updateUser(lat,lng){
 userLat=lat;
 userLng=lng;
 
-streetName=await getStreetName(lat,lng);
-
-const icon=createUserIcon(streetName);
+const via=await getStreetName(lat,lng);
+const icon=createUserIcon(via);
 
 if(userMarker){
 userMarker.setLatLng([lat,lng]);
@@ -267,69 +238,7 @@ userMarker=L.marker([lat,lng],{icon}).addTo(map);
 map.setView([lat,lng],15);
 }
 
-/* GPS REALE */
-if(navigator.geolocation){
-
-navigator.geolocation.getCurrentPosition(
-function(pos){
-setUserPosition(pos.coords.latitude,pos.coords.longitude);
-},
-function(err){
-setUserPosition(userLat,userLng);
-},
-{
-enableHighAccuracy:true,
-timeout:10000,
-maximumAge:0
-}
-);
-
-navigator.geolocation.watchPosition(
-function(pos){
-setUserPosition(pos.coords.latitude,pos.coords.longitude);
-},
-function(err){},
-{
-enableHighAccuracy:true,
-maximumAge:5000,
-timeout:10000
-}
-);
-
-}else{
-setUserPosition(userLat,userLng);
-}
-
-/* POI */
-const pois=[
-["Basilica di Bonaria",39.2107,9.1294,"Santuario simbolo di Cagliari.","Bus 5 - 6","#0055ff"],
-["Orto Botanico",39.2231,9.1116,"Giardino botanico storico.","Bus 1 - 9","#00aa44"],
-["Bastione Saint Remy",39.2168,9.1178,"Belvedere panoramico.","Bus 6 - 7","#ff8800"],
-["Poetto",39.1999,9.1535,"Spiaggia cittadina.","Bus PF - PQ","#00bcd4"],
-["Duomo di Cagliari",39.2190,9.1160,"Cattedrale storica.","Bus 8","#8e44ad"]
-];
-
-pois.forEach(function(p){
-
-const obj={name:p[0],lat:p[1],lng:p[2],desc:p[3],transport:p[4],color:p[5]};
-
-const icon=L.divIcon({
-className:"",
-html:`
-<div class="poiWrap">
-<div class="poiDot" style="background:${obj.color};"></div>
-<div class="poiText">${obj.name}</div>
-</div>
-`,
-iconSize:[120,60]
-});
-
-L.marker([obj.lat,obj.lng],{icon})
-.addTo(map)
-.on("click",function(){showCard(obj);});
-
-});
-
+/* DISTANZA */
 function km(lat1,lon1,lat2,lon2){
 const R=6371;
 const dLat=(lat2-lat1)*Math.PI/180;
@@ -343,20 +252,103 @@ const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 return (R*c).toFixed(2);
 }
 
-window.showCard=function(p){
-document.getElementById("poiTitle").innerText=p.name;
-document.getElementById("poiDesc").innerText=p.desc;
-document.getElementById("poiTransport").innerText="Trasporti: "+p.transport;
-document.getElementById("poiDistance").innerText="Distanza: "+km(userLat,userLng,p.lat,p.lng)+" km";
+/* WIKIPEDIA LIVE */
+async function loadWikipediaPOI(lat,lng){
+
+poiLayer.clearLayers();
+
+try{
+const url=`https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lng}&gsradius=3000&gslimit=20&format=json&origin=*`;
+
+const res=await fetch(url);
+const data=await res.json();
+
+data.query.geosearch.forEach(function(item){
+
+const marker=L.circleMarker(
+[item.lat,item.lon],
+{
+radius:9,
+color:"#000",
+fillColor:"#007bff",
+fillOpacity:0.95,
+weight:2
+}
+).addTo(poiLayer);
+
+marker.bindTooltip(item.title,{
+permanent:true,
+direction:"bottom",
+offset:[0,10],
+className:"wikiLabel"
+});
+
+marker.on("click",function(){
+
+document.getElementById("poiTitle").innerText=item.title;
+document.getElementById("poiDesc").innerText="Punto di interesse rilevato da Wikipedia.";
+document.getElementById("poiDistance").innerText=
+"Distanza: "+km(userLat,userLng,item.lat,item.lon)+" km";
 
 document.getElementById("goBtn").onclick=function(){
 window.open(
-"https://www.google.com/maps/dir/"+userLat+","+userLng+"/"+p.lat+","+p.lng,
+"https://it.wikipedia.org/wiki/"+encodeURIComponent(item.title),
 "_blank"
 );
 };
 
 document.getElementById("card").style.display="block";
+});
+
+});
+
+}catch(e){
+console.log("Errore Wikipedia",e);
+}
+}
+
+/* GPS + LIVE */
+function refreshAll(lat,lng){
+updateUser(lat,lng);
+loadWikipediaPOI(lat,lng);
+}
+
+if(navigator.geolocation){
+
+navigator.geolocation.getCurrentPosition(
+function(pos){
+refreshAll(
+pos.coords.latitude,
+pos.coords.longitude
+);
+},
+function(err){
+refreshAll(userLat,userLng);
+},
+{
+enableHighAccuracy:true,
+timeout:10000,
+maximumAge:0
+}
+);
+
+navigator.geolocation.watchPosition(
+function(pos){
+refreshAll(
+pos.coords.latitude,
+pos.coords.longitude
+);
+},
+function(err){},
+{
+enableHighAccuracy:true,
+maximumAge:10000,
+timeout:10000
+}
+);
+
+}else{
+refreshAll(userLat,userLng);
 }
 
 window.closeCard=function(){
