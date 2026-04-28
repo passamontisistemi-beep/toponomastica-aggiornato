@@ -8,7 +8,6 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
-
 body{
 background:#dfe7ee;
 display:flex;
@@ -17,7 +16,6 @@ align-items:center;
 min-height:100vh;
 padding:10px;
 }
-
 #phone{
 width:min(100vw,390px);
 aspect-ratio:9/16;
@@ -29,20 +27,9 @@ display:flex;
 flex-direction:column;
 position:relative;
 }
+#headerImg{width:100%;display:block;}
+#map{flex:1;width:100%;}
 
-/* HEADER */
-#headerImg{
-width:100%;
-display:block;
-}
-
-/* MAPPA */
-#map{
-flex:1;
-width:100%;
-}
-
-/* FOOTER */
 footer{
 height:95px;
 background:#111;
@@ -90,7 +77,6 @@ color:#ddd;
 100%{transform:translateX(-100%);}
 }
 
-/* CARD */
 .poiCard{
 position:absolute;
 top:28%;
@@ -120,7 +106,6 @@ cursor:pointer;
 .go{background:#000;color:#fff;}
 .close{background:#ddd;}
 
-/* MARKERS */
 .poiWrap{text-align:center;}
 
 .poiDot{
@@ -203,32 +188,61 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 let userLat=39.2238;
 let userLng=9.1217;
 let userMarker=null;
+let streetName="Posizione rilevata";
 
-const userIcon=L.divIcon({
+function createUserIcon(via){
+return L.divIcon({
 className:"",
 html:`
 <div style="text-align:center">
 <div style="width:30px;height:30px;background:red;border-radius:50%;border:4px solid white;margin:auto"></div>
 <div style="font-size:12px;font-weight:bold;color:red;margin-top:4px;">TU SEI QUI</div>
+<div style="font-size:10px;font-weight:bold;color:#000;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:8px;margin-top:2px;display:inline-block;max-width:130px;">${via}</div>
 </div>
 `,
-iconSize:[100,60]
+iconSize:[140,80]
 });
+}
 
-/* GEOLOCALIZZAZIONE REALE GPS */
-function setUserPosition(lat,lng){
+/* RECUPERA VIA CON REVERSE GEOCODING */
+async function getStreetName(lat,lng){
+try{
+const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+const res=await fetch(url);
+const data=await res.json();
+
+if(data.address){
+return data.address.road ||
+data.address.pedestrian ||
+data.address.suburb ||
+data.address.city ||
+"Posizione rilevata";
+}
+return "Posizione rilevata";
+}catch(e){
+return "Posizione rilevata";
+}
+}
+
+async function setUserPosition(lat,lng){
 userLat=lat;
 userLng=lng;
 
+streetName=await getStreetName(lat,lng);
+
+const icon=createUserIcon(streetName);
+
 if(userMarker){
 userMarker.setLatLng([lat,lng]);
+userMarker.setIcon(icon);
 }else{
-userMarker=L.marker([lat,lng],{icon:userIcon}).addTo(map);
+userMarker=L.marker([lat,lng],{icon}).addTo(map);
 }
 
 map.setView([lat,lng],15);
 }
 
+/* GPS REALE */
 if(navigator.geolocation){
 
 navigator.geolocation.getCurrentPosition(
@@ -248,7 +262,6 @@ maximumAge:0
 }
 );
 
-/* AGGIORNA MENTRE CAMMINI */
 navigator.geolocation.watchPosition(
 function(pos){
 setUserPosition(
@@ -274,8 +287,7 @@ const pois=[
 ["Orto Botanico",39.2231,9.1116,"Giardino botanico storico.","Bus 1 - 9","#00aa44"],
 ["Bastione Saint Remy",39.2168,9.1178,"Belvedere panoramico.","Bus 6 - 7","#ff8800"],
 ["Poetto",39.1999,9.1535,"Spiaggia cittadina.","Bus PF - PQ","#00bcd4"],
-["Duomo di Cagliari",39.2190,9.1160,"Cattedrale storica.","Bus 8","#8e44ad"],
-["Museo Archeologico",39.2210,9.1122,"Museo nazionale archeologico.","Bus 1","#e91e63"]
+["Duomo di Cagliari",39.2190,9.1160,"Cattedrale storica.","Bus 8","#8e44ad"]
 ];
 
 pois.forEach(function(p){
