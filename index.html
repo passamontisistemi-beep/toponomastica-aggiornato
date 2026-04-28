@@ -196,15 +196,40 @@ className:"",
 html:`
 <div style="text-align:center">
 <div style="width:30px;height:30px;background:red;border-radius:50%;border:4px solid white;margin:auto"></div>
-<div style="font-size:12px;font-weight:bold;color:red;margin-top:4px;">TU SEI QUI</div>
-<div style="font-size:10px;font-weight:bold;color:#000;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:8px;margin-top:2px;display:inline-block;max-width:130px;">${via}</div>
+
+<div style="
+font-size:11px;
+font-weight:bold;
+color:#fff;
+background:#000;
+padding:3px 8px;
+border-radius:8px;
+margin-top:4px;
+display:inline-block;
+">
+TU SEI QUI
+</div>
+
+<div style="
+font-size:10px;
+font-weight:bold;
+color:#000;
+background:rgba(255,255,255,.90);
+padding:2px 6px;
+border-radius:8px;
+margin-top:3px;
+display:inline-block;
+max-width:130px;
+">
+${via}
+</div>
 </div>
 `,
-iconSize:[140,80]
+iconSize:[145,90]
 });
 }
 
-/* RECUPERA VIA CON REVERSE GEOCODING */
+/* VIA */
 async function getStreetName(lat,lng){
 try{
 const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
@@ -247,10 +272,7 @@ if(navigator.geolocation){
 
 navigator.geolocation.getCurrentPosition(
 function(pos){
-setUserPosition(
-pos.coords.latitude,
-pos.coords.longitude
-);
+setUserPosition(pos.coords.latitude,pos.coords.longitude);
 },
 function(err){
 setUserPosition(userLat,userLng);
@@ -264,10 +286,7 @@ maximumAge:0
 
 navigator.geolocation.watchPosition(
 function(pos){
-setUserPosition(
-pos.coords.latitude,
-pos.coords.longitude
-);
+setUserPosition(pos.coords.latitude,pos.coords.longitude);
 },
 function(err){},
 {
