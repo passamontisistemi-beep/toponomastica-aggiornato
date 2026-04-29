@@ -16,7 +16,6 @@ align-items:center;
 min-height:100vh;
 padding:10px;
 }
-
 #app{
 width:min(100vw,390px);
 aspect-ratio:9/16;
@@ -28,7 +27,6 @@ display:flex;
 flex-direction:column;
 position:relative;
 }
-
 #header img{width:100%;display:block;}
 
 #topBar{
@@ -40,8 +38,6 @@ background:#fff;
 border-bottom:1px solid #ddd;
 line-height:16px;
 min-height:52px;
-position:relative;
-z-index:1000;
 }
 
 #mapWrap{
@@ -50,12 +46,9 @@ flex:1;
 width:100%;
 }
 
-#map{
-width:100%;
-height:100%;
-}
+#map{width:100%;height:100%;}
 
-/* NUOVO PULSANTE + */
+/* + BUTTON */
 #plusBtn{
 position:absolute;
 top:12px;
@@ -68,26 +61,61 @@ background:#ff0000;
 color:#fff;
 font-size:40px;
 font-weight:900;
-line-height:62px;
 cursor:pointer;
 z-index:1500;
-box-shadow:0 0 0 rgba(255,0,0,.7);
-animation:strongPulse 1.1s infinite;
+animation:pulse 1.1s infinite;
+box-shadow:0 0 0 rgba(255,0,0,.6);
 }
 
-@keyframes strongPulse{
-0%{
-transform:scale(1);
-box-shadow:0 0 0 0 rgba(255,0,0,.65);
+@keyframes pulse{
+0%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,0,0,.6);}
+50%{transform:scale(1.12);box-shadow:0 0 0 16px rgba(255,0,0,0);}
+100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,0,0,0);}
 }
-50%{
-transform:scale(1.12);
-box-shadow:0 0 0 16px rgba(255,0,0,0);
+
+/* GPS MODAL */
+#gpsModal{
+position:absolute;
+inset:0;
+background:rgba(0,0,0,.65);
+z-index:3000;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
 }
-100%{
-transform:scale(1);
-box-shadow:0 0 0 0 rgba(255,0,0,0);
+
+#gpsBox{
+background:#fff;
+border-radius:22px;
+padding:22px;
+text-align:center;
+width:100%;
+max-width:320px;
+box-shadow:0 20px 40px rgba(0,0,0,.3);
 }
+
+#gpsBox h2{
+font-size:20px;
+margin-bottom:10px;
+}
+
+#gpsBox p{
+font-size:14px;
+line-height:1.4;
+margin-bottom:14px;
+}
+
+#gpsBtn{
+width:100%;
+padding:12px;
+border:none;
+border-radius:12px;
+background:#000;
+color:#fff;
+font-size:15px;
+font-weight:700;
+cursor:pointer;
 }
 
 /* PANEL */
@@ -115,10 +143,7 @@ justify-content:space-between;
 align-items:center;
 }
 
-#poiList{
-max-height:280px;
-overflow:auto;
-}
+#poiList{max-height:280px;overflow:auto;}
 
 .poiItem{
 padding:12px;
@@ -214,6 +239,15 @@ color:#ddd;
 
 <div id="app">
 
+<!-- GPS CONSENSO -->
+<div id="gpsModal">
+<div id="gpsBox">
+<h2>Autorizzazione GPS</h2>
+<p>Per utilizzare la web app ufficiale del Comune è necessario consentire l’uso della tua posizione.</p>
+<button id="gpsBtn">Consenti localizzazione</button>
+</div>
+</div>
+
 <div id="header">
 <img src="Header in PNG 1080x260.png" alt="Header Comune">
 </div>
@@ -223,11 +257,11 @@ I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
 </div>
 
 <div id="mapWrap">
+
 <div id="map"></div>
 
 <button id="plusBtn">+</button>
 
-<!-- MENU -->
 <div id="poiPanel">
 <div id="poiPanelHeader">
 <span>Punti di Interesse</span>
@@ -235,9 +269,9 @@ I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
 </div>
 <div id="poiList"></div>
 </div>
+
 </div>
 
-<!-- CARD -->
 <div id="detailCard">
 <h2 id="poiTitle"></h2>
 <p id="poiDistance"></p>
@@ -270,7 +304,7 @@ I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", async function(){
+document.addEventListener("DOMContentLoaded",function(){
 
 const map=L.map("map",{
 zoomControl:true,
@@ -289,22 +323,40 @@ let userMarker=null;
 let poiLayer=L.layerGroup().addTo(map);
 let poiData=[];
 
-/* GPS */
-async function initLocation(){
-return new Promise((resolve)=>{
-if(!navigator.geolocation){resolve();return;}
-navigator.geolocation.getCurrentPosition(pos=>{
+/* GPS FLOW */
+document.getElementById("gpsBtn").onclick=function(){
+
+if(navigator.geolocation){
+navigator.geolocation.getCurrentPosition(
+async function(pos){
 userLat=pos.coords.latitude;
 userLng=pos.coords.longitude;
-resolve();
-},err=>resolve(),{
+
+document.getElementById("gpsModal").style.display="none";
+
+await drawUser();
+await loadPOI();
+},
+async function(){
+document.getElementById("gpsModal").style.display="none";
+await drawUser();
+await loadPOI();
+},
+{
 enableHighAccuracy:true,
 timeout:10000,
 maximumAge:0
-});
-});
+}
+);
+}else{
+document.getElementById("gpsModal").style.display="none";
+drawUser();
+loadPOI();
 }
 
+};
+
+/* VIA */
 async function reverseStreet(lat,lng){
 try{
 const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
@@ -315,6 +367,7 @@ return "Posizione rilevata";
 }
 }
 
+/* USER */
 function userIcon(via){
 return L.divIcon({
 className:"",
@@ -336,6 +389,7 @@ userMarker=L.marker([userLat,userLng],{icon:userIcon(via)}).addTo(map);
 map.setView([userLat,userLng],16);
 }
 
+/* POI */
 async function loadPOI(){
 poiLayer.clearLayers();
 poiData=[];
@@ -347,69 +401,82 @@ const d=await r.json();
 
 poiData=(d.query.geosearch||[]).sort((a,b)=>a.dist-b.dist);
 
-poiData.forEach(item=>{
-const marker=L.circleMarker([item.lat,item.lon],{
-radius:7,color:"#000",weight:2,fillColor:"#2196f3",fillOpacity:1
-}).addTo(poiLayer);
-
-marker.on("click",()=>openDetail(item));
-});
-
+poiData.forEach(item=>drawPoi(item,false));
 renderList();
 
 }catch(e){console.log(e);}
 }
 
+function drawPoi(item,selected){
+
+const marker=L.circleMarker([item.lat,item.lon],{
+radius:selected?10:7,
+color:"#000",
+weight:2,
+fillColor:selected?"#ff0000":"#2196f3",
+fillOpacity:1
+}).addTo(poiLayer);
+
+marker.on("click",()=>openDetail(item));
+}
+
+/* MENU */
 function renderList(){
 const list=document.getElementById("poiList");
 list.innerHTML="";
+
 poiData.forEach(item=>{
 const row=document.createElement("div");
 row.className="poiItem";
 row.innerHTML=`${item.title} - ${(item.dist/1000).toFixed(2)} km`;
-row.onclick=()=>{
+
+row.onclick=function(){
+
+poiLayer.clearLayers();
+
+poiData.forEach(p=>{
+drawPoi(p,p.title===item.title);
+});
+
 document.getElementById("poiPanel").style.display="none";
 };
+
 list.appendChild(row);
 });
 }
 
+/* CARD */
 function openDetail(item){
 document.getElementById("poiTitle").innerText=item.title;
 document.getElementById("poiDistance").innerText="Distanza a piedi: "+(item.dist/1000).toFixed(2)+" km";
 document.getElementById("poiTransport").innerText="Mezzo di trasporto: verificabile localmente";
 
-document.getElementById("wikiBtn").onclick=()=>{
+document.getElementById("wikiBtn").onclick=function(){
 window.open("https://it.wikipedia.org/wiki/"+encodeURIComponent(item.title),"_blank");
 };
 
-document.getElementById("goBtn").onclick=()=>{
+document.getElementById("goBtn").onclick=function(){
 window.open(`https://www.google.com/maps/dir/${userLat},${userLng}/${item.lat},${item.lon}`,"_blank");
 };
 
 document.getElementById("detailCard").style.display="block";
 }
 
-window.closePanel=function(){
-document.getElementById("poiPanel").style.display="none";
-}
-
 window.closeCard=function(){
 document.getElementById("detailCard").style.display="none";
+}
+
+window.closePanel=function(){
+document.getElementById("poiPanel").style.display="none";
 }
 
 document.getElementById("plusBtn").onclick=function(){
 const p=document.getElementById("poiPanel");
 p.style.display=(p.style.display==="block")?"none":"block";
-}
+};
 
-/* START */
-await initLocation();
-await drawUser();
-await loadPOI();
-
-setInterval(async()=>{
-await initLocation();
+/* REFRESH 5 MIN */
+setInterval(async function(){
 await drawUser();
 await loadPOI();
 },300000);
