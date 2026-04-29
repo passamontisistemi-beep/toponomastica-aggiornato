@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Nuova Toponomastica Aumentata - Comune di Cagliari</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
 body{
@@ -15,6 +16,7 @@ align-items:center;
 min-height:100vh;
 padding:10px;
 }
+
 #app{
 width:min(100vw,390px);
 aspect-ratio:9/16;
@@ -26,45 +28,62 @@ display:flex;
 flex-direction:column;
 position:relative;
 }
-#header img{width:100%;display:block}
-#infoBar{
-padding:8px 10px;
+
+#header img{width:100%;display:block;}
+
+#topBar{
+position:relative;
+padding:10px 62px 10px 10px;
 text-align:center;
 font-size:13px;
-font-weight:700;
+font-weight:800;
 background:#fff;
 border-bottom:1px solid #ddd;
+line-height:16px;
+min-height:52px;
 }
-#map{flex:1;width:100%}
+
 #plusBtn{
 position:absolute;
-right:14px;
-bottom:120px;
-width:54px;
-height:54px;
+right:10px;
+top:8px;
+width:42px;
+height:42px;
 border:none;
 border-radius:50%;
 background:#000;
 color:#fff;
-font-size:34px;
-line-height:54px;
+font-size:30px;
+font-weight:900;
 cursor:pointer;
-z-index:1000;
+z-index:1500;
 box-shadow:0 8px 20px rgba(0,0,0,.25);
+animation:pulse 1.6s infinite;
 }
+
+@keyframes pulse{
+0%{transform:scale(1)}
+50%{transform:scale(1.08)}
+100%{transform:scale(1)}
+}
+
+#map{flex:1;width:100%;}
+
+/* PANEL */
 #poiPanel{
 position:absolute;
 left:12px;
 right:12px;
-bottom:120px;
+top:150px;
 max-height:48%;
 background:#fff;
 border-radius:18px;
 box-shadow:0 15px 35px rgba(0,0,0,.25);
-z-index:1001;
+z-index:1600;
 display:none;
 overflow:hidden;
 }
+
 #poiPanelHeader{
 padding:12px;
 font-weight:700;
@@ -74,31 +93,39 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 }
+
 #poiList{
-max-height:260px;
+max-height:280px;
 overflow:auto;
 }
+
 .poiItem{
 padding:12px;
 border-bottom:1px solid #eee;
 cursor:pointer;
 font-size:14px;
+font-weight:600;
 }
+
 .poiItem:hover{background:#f6f6f6}
+
+/* CARD */
 #detailCard{
 position:absolute;
 left:12px;
 right:12px;
-top:22%;
+top:24%;
 background:#fff;
 border-radius:18px;
 box-shadow:0 15px 35px rgba(0,0,0,.25);
-z-index:1002;
+z-index:1700;
 display:none;
 padding:14px;
 }
+
 #detailCard h2{font-size:18px;margin-bottom:8px}
 #detailCard p{font-size:14px;margin:6px 0}
+
 .btn{
 width:100%;
 padding:10px;
@@ -108,8 +135,11 @@ margin-top:8px;
 font-weight:700;
 cursor:pointer;
 }
+
 .dark{background:#000;color:#fff}
 .light{background:#e9e9e9}
+
+/* FOOTER */
 footer{
 height:95px;
 background:#111;
@@ -118,6 +148,7 @@ display:flex;
 flex-direction:column;
 justify-content:center;
 }
+
 .rss{
 height:24px;
 overflow:hidden;
@@ -125,6 +156,7 @@ white-space:nowrap;
 border-top:1px solid rgba(255,255,255,.08);
 border-bottom:1px solid rgba(255,255,255,.08);
 }
+
 .track{
 display:inline-block;
 padding-left:100%;
@@ -132,12 +164,14 @@ animation:scroll 30s linear infinite;
 line-height:24px;
 font-size:12px;
 }
+
 .phoneLink{
 color:#00ffd0;
 text-decoration:none;
 font-weight:700;
 margin-right:24px;
 }
+
 .brand{
 flex:1;
 display:flex;
@@ -147,12 +181,14 @@ font-size:10px;
 letter-spacing:1px;
 color:#ddd;
 }
+
 @keyframes scroll{
 0%{transform:translateX(0)}
 100%{transform:translateX(-100%)}
 }
 </style>
 </head>
+
 <body>
 
 <div id="app">
@@ -161,14 +197,14 @@ color:#ddd;
 <img src="Header in PNG 1080x260.png" alt="Header Comune">
 </div>
 
-<div id="infoBar">
+<div id="topBar">
 I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
+<button id="plusBtn">+</button>
 </div>
 
 <div id="map"></div>
 
-<button id="plusBtn">+</button>
-
+<!-- MENU -->
 <div id="poiPanel">
 <div id="poiPanelHeader">
 <span>Punti di Interesse</span>
@@ -177,6 +213,7 @@ I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
 <div id="poiList"></div>
 </div>
 
+<!-- CARD -->
 <div id="detailCard">
 <h2 id="poiTitle"></h2>
 <p id="poiDistance"></p>
@@ -207,25 +244,35 @@ I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", async function(){
 
-const map=L.map("map",{zoomControl:true}).setView([39.2238,9.1217],15);
+/* MAPPA BLOCCATA */
+const map=L.map("map",{
+zoomControl:true,
+dragging:false,
+scrollWheelZoom:false,
+doubleClickZoom:false,
+boxZoom:false,
+keyboard:false,
+touchZoom:false
+}).setView([39.2238,9.1217],15);
+
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
 let userLat=39.2238,userLng=9.1217;
 let userMarker=null;
 let poiLayer=L.layerGroup().addTo(map);
 let poiData=[];
+let selectedItem=null;
+let selectedMarker=null;
 
-/* RICHIESTA GPS */
+/* GPS */
 async function initLocation(){
 return new Promise((resolve)=>{
-if(!navigator.geolocation){
-resolve();
-return;
-}
-navigator.geolocation.getCurrentPosition(async pos=>{
+if(!navigator.geolocation){resolve();return;}
+navigator.geolocation.getCurrentPosition(pos=>{
 userLat=pos.coords.latitude;
 userLng=pos.coords.longitude;
 resolve();
@@ -237,6 +284,18 @@ maximumAge:0
 });
 }
 
+/* VIA */
+async function reverseStreet(lat,lng){
+try{
+const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+const d=await r.json();
+return d.address.road||d.address.pedestrian||d.address.suburb||"Posizione rilevata";
+}catch(e){
+return "Posizione rilevata";
+}
+}
+
+/* ICONA UTENTE */
 function userIcon(via){
 return L.divIcon({
 className:"",
@@ -251,16 +310,6 @@ iconSize:[150,90]
 });
 }
 
-async function reverseStreet(lat,lng){
-try{
-const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-const d=await r.json();
-return d.address.road||d.address.pedestrian||d.address.suburb||"Posizione rilevata";
-}catch(e){
-return "Posizione rilevata";
-}
-}
-
 async function drawUser(){
 const via=await reverseStreet(userLat,userLng);
 if(userMarker) map.removeLayer(userMarker);
@@ -268,17 +317,7 @@ userMarker=L.marker([userLat,userLng],{icon:userIcon(via)}).addTo(map);
 map.setView([userLat,userLng],16);
 }
 
-function km(lat1,lon1,lat2,lon2){
-const R=6371;
-const dLat=(lat2-lat1)*Math.PI/180;
-const dLon=(lon2-lon1)*Math.PI/180;
-const a=Math.sin(dLat/2)**2+
-Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-Math.sin(dLon/2)**2;
-return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
-}
-
-/* WIKI AROUND 1KM */
+/* POI */
 async function loadPOI(){
 poiLayer.clearLayers();
 poiData=[];
@@ -291,37 +330,61 @@ const d=await r.json();
 poiData=(d.query.geosearch||[]).sort((a,b)=>a.dist-b.dist);
 
 poiData.forEach(item=>{
-const marker=L.circleMarker([item.lat,item.lon],{
-radius:7,
-color:"#000",
-weight:2,
-fillColor:"#2196f3",
-fillOpacity:1
-}).addTo(poiLayer);
-
-marker.on("click",()=>openDetail(item,marker));
+drawPoi(item,false);
 });
 
 renderList();
 
-}catch(e){
-console.log(e);
+}catch(e){console.log(e);}
+}
+
+function drawPoi(item,isSelected){
+
+const marker=L.circleMarker([item.lat,item.lon],{
+radius:isSelected?10:7,
+color:"#000",
+weight:2,
+fillColor:isSelected?"#ff0000":"#2196f3",
+fillOpacity:1
+}).addTo(poiLayer);
+
+marker.on("click",()=>{
+openDetail(item);
+});
+
+if(isSelected){
+selectedMarker=marker;
 }
 }
 
 function renderList(){
 const list=document.getElementById("poiList");
 list.innerHTML="";
+
 poiData.forEach(item=>{
 const row=document.createElement("div");
 row.className="poiItem";
 row.innerHTML=`${item.title} - ${(item.dist/1000).toFixed(2)} km`;
-row.onclick=()=>openDetail(item,null);
+row.onclick=()=>selectPoi(item);
 list.appendChild(row);
 });
 }
 
-function openDetail(item,marker){
+/* SELEZIONE DA MENU */
+function selectPoi(item){
+selectedItem=item;
+
+poiLayer.clearLayers();
+
+poiData.forEach(p=>{
+drawPoi(p,p.title===item.title);
+});
+
+document.getElementById("poiPanel").style.display="none";
+}
+
+/* CARD SOLO DOPO CLICK SUL PUNTINO */
+function openDetail(item){
 document.getElementById("poiTitle").innerText=item.title;
 document.getElementById("poiDistance").innerText="Distanza a piedi: "+(item.dist/1000).toFixed(2)+" km";
 document.getElementById("poiTransport").innerText="Mezzo di trasporto: verificabile localmente";
@@ -337,17 +400,18 @@ window.open(`https://www.google.com/maps/dir/${userLat},${userLng}/${item.lat},$
 document.getElementById("detailCard").style.display="block";
 }
 
-window.closeCard=function(){
-document.getElementById("detailCard").style.display="none";
+/* UI */
+document.getElementById("plusBtn").onclick=function(){
+const p=document.getElementById("poiPanel");
+p.style.display=(p.style.display==="block")?"none":"block";
 }
 
 window.closePanel=function(){
 document.getElementById("poiPanel").style.display="none";
 }
 
-document.getElementById("plusBtn").onclick=function(){
-const p=document.getElementById("poiPanel");
-p.style.display=(p.style.display==="block")?"none":"block";
+window.closeCard=function(){
+document.getElementById("detailCard").style.display="none";
 }
 
 /* START */
@@ -355,8 +419,8 @@ await initLocation();
 await drawUser();
 await loadPOI();
 
-/* REFRESH OGNI 5 MIN */
-setInterval(async ()=>{
+/* REFRESH 5 MIN */
+setInterval(async()=>{
 await initLocation();
 await drawUser();
 await loadPOI();
