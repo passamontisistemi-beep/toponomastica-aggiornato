@@ -2,14 +2,20 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comune di Cagliari - Nuova Toponomastica Aumentata</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nuova Toponomastica Aumentata - Comune di Cagliari</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
-body{background:#dfe7ee;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:10px;}
-#phone{
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{
+background:#dfe7ee;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:10px;
+}
+#app{
 width:min(100vw,390px);
 aspect-ratio:9/16;
 background:#fff;
@@ -20,9 +26,90 @@ display:flex;
 flex-direction:column;
 position:relative;
 }
-#headerImg{width:100%;display:block;}
-#map{flex:1;width:100%;}
-
+#header img{width:100%;display:block}
+#infoBar{
+padding:8px 10px;
+text-align:center;
+font-size:13px;
+font-weight:700;
+background:#fff;
+border-bottom:1px solid #ddd;
+}
+#map{flex:1;width:100%}
+#plusBtn{
+position:absolute;
+right:14px;
+bottom:120px;
+width:54px;
+height:54px;
+border:none;
+border-radius:50%;
+background:#000;
+color:#fff;
+font-size:34px;
+line-height:54px;
+cursor:pointer;
+z-index:1000;
+box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+#poiPanel{
+position:absolute;
+left:12px;
+right:12px;
+bottom:120px;
+max-height:48%;
+background:#fff;
+border-radius:18px;
+box-shadow:0 15px 35px rgba(0,0,0,.25);
+z-index:1001;
+display:none;
+overflow:hidden;
+}
+#poiPanelHeader{
+padding:12px;
+font-weight:700;
+background:#000;
+color:#fff;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+#poiList{
+max-height:260px;
+overflow:auto;
+}
+.poiItem{
+padding:12px;
+border-bottom:1px solid #eee;
+cursor:pointer;
+font-size:14px;
+}
+.poiItem:hover{background:#f6f6f6}
+#detailCard{
+position:absolute;
+left:12px;
+right:12px;
+top:22%;
+background:#fff;
+border-radius:18px;
+box-shadow:0 15px 35px rgba(0,0,0,.25);
+z-index:1002;
+display:none;
+padding:14px;
+}
+#detailCard h2{font-size:18px;margin-bottom:8px}
+#detailCard p{font-size:14px;margin:6px 0}
+.btn{
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+margin-top:8px;
+font-weight:700;
+cursor:pointer;
+}
+.dark{background:#000;color:#fff}
+.light{background:#e9e9e9}
 footer{
 height:95px;
 background:#111;
@@ -48,7 +135,7 @@ font-size:12px;
 .phoneLink{
 color:#00ffd0;
 text-decoration:none;
-font-weight:bold;
+font-weight:700;
 margin-right:24px;
 }
 .brand{
@@ -61,67 +148,56 @@ letter-spacing:1px;
 color:#ddd;
 }
 @keyframes scroll{
-0%{transform:translateX(0);}
-100%{transform:translateX(-100%);}
+0%{transform:translateX(0)}
+100%{transform:translateX(-100%)}
 }
-
-.poiCard{
-position:absolute;
-top:28%;
-left:12px;
-right:12px;
-background:#fff;
-padding:14px;
-border-radius:18px;
-box-shadow:0 15px 35px rgba(0,0,0,.25);
-z-index:9999;
-display:none;
-}
-.poiCard h2{font-size:18px;margin-bottom:8px;}
-.poiCard p{font-size:14px;margin:5px 0;}
-.poiCard button{
-width:100%;
-padding:10px;
-border:none;
-border-radius:10px;
-margin-top:8px;
-font-weight:bold;
-cursor:pointer;
-}
-.go{background:#000;color:#fff;}
-.close{background:#ddd;}
 </style>
 </head>
-
 <body>
 
-<div id="phone">
+<div id="app">
 
-<img id="headerImg" src="Header in PNG 1080x260.png" alt="Header Comune di Cagliari">
+<div id="header">
+<img src="Header in PNG 1080x260.png" alt="Header Comune">
+</div>
+
+<div id="infoBar">
+I punti di interesse mappati sono quelli esistenti entro un raggio di 1 Km
+</div>
 
 <div id="map"></div>
 
-<div class="poiCard" id="card">
+<button id="plusBtn">+</button>
+
+<div id="poiPanel">
+<div id="poiPanelHeader">
+<span>Punti di Interesse</span>
+<button onclick="closePanel()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
+</div>
+<div id="poiList"></div>
+</div>
+
+<div id="detailCard">
 <h2 id="poiTitle"></h2>
-<p id="poiDesc"></p>
 <p id="poiDistance"></p>
-<button class="go" id="goBtn">VEDI SU WIKIPEDIA</button>
-<button class="close" onclick="closeCard()">CHIUDI</button>
+<p id="poiTransport"></p>
+<button class="btn dark" id="wikiBtn">Wikipedia</button>
+<button class="btn dark" id="goBtn">Portami lì</button>
+<button class="btn light" onclick="closeCard()">Chiudi</button>
 </div>
 
 <footer>
 <div class="rss">
 <div class="track">
-🎉 Eventi Cagliari • Concerto Piazza Yenne ore 21:00 • Mostra Bastione ore 18:00 • Festival Marina ore 20:30 •
+🎉 Concerto in piazza Centrale ore 21:00 • Apertura mostra fotografica ore 18:00 •
 </div>
 </div>
 
 <div class="rss">
 <div class="track">
 <a class="phoneLink" href="tel:41211">📞 Taxi 41211</a>
-<a class="phoneLink" href="tel:606121">📞 Guardia Medica</a>
-<a class="phoneLink" href="tel:603333">📞 Veterinario</a>
-<a class="phoneLink" href="tel:112">📞 Emergenze</a>
+<a class="phoneLink" href="tel:606121">📞 Guardia Medica 606121</a>
+<a class="phoneLink" href="tel:603333">📞 Veterinario 603333</a>
 </div>
 </div>
 
@@ -131,203 +207,160 @@ cursor:pointer;
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded",function(){
+document.addEventListener("DOMContentLoaded", async function(){
 
-const map=L.map("map",{
-zoomControl:false,
-dragging:false,
-scrollWheelZoom:false,
-doubleClickZoom:false,
-boxZoom:false,
-keyboard:false,
-touchZoom:false
-}).setView([39.2238,9.1217],15);
-
+const map=L.map("map",{zoomControl:true}).setView([39.2238,9.1217],15);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-let userLat=39.2238;
-let userLng=9.1217;
+let userLat=39.2238,userLng=9.1217;
 let userMarker=null;
 let poiLayer=L.layerGroup().addTo(map);
-let popupOpen=false;
+let poiData=[];
 
-/* ICONA UTENTE */
-function createUserIcon(via){
+/* RICHIESTA GPS */
+async function initLocation(){
+return new Promise((resolve)=>{
+if(!navigator.geolocation){
+resolve();
+return;
+}
+navigator.geolocation.getCurrentPosition(async pos=>{
+userLat=pos.coords.latitude;
+userLng=pos.coords.longitude;
+resolve();
+},err=>resolve(),{
+enableHighAccuracy:true,
+timeout:10000,
+maximumAge:0
+});
+});
+}
+
+function userIcon(via){
 return L.divIcon({
 className:"",
 html:`
 <div style="text-align:center">
-<div style="width:30px;height:30px;background:red;border-radius:50%;border:4px solid white;margin:auto"></div>
-
-<div style="font-size:11px;font-weight:bold;color:#fff;background:#000;padding:3px 8px;border-radius:8px;margin-top:4px;display:inline-block;">
-TU SEI QUI
-</div>
-
-<div style="font-size:10px;font-weight:bold;color:#000;background:rgba(255,255,255,.92);padding:2px 6px;border-radius:8px;margin-top:3px;display:inline-block;max-width:130px;">
-${via}
-</div>
+<div style="width:28px;height:28px;background:red;border-radius:50%;border:4px solid #fff;margin:auto"></div>
+<div style="background:#000;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;margin-top:4px;display:inline-block">TU SEI QUI</div>
+<div style="background:#fff;color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-top:3px;display:inline-block">${via}</div>
 </div>
 `,
-iconSize:[145,90]
+iconSize:[150,90]
 });
 }
 
-/* VIA */
-async function getStreetName(lat,lng){
+async function reverseStreet(lat,lng){
 try{
-const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-const data=await res.json();
-return data.address.road ||
-data.address.pedestrian ||
-data.address.suburb ||
-data.address.city ||
-"Posizione rilevata";
+const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+const d=await r.json();
+return d.address.road||d.address.pedestrian||d.address.suburb||"Posizione rilevata";
 }catch(e){
 return "Posizione rilevata";
 }
 }
 
-/* DISTANZA */
+async function drawUser(){
+const via=await reverseStreet(userLat,userLng);
+if(userMarker) map.removeLayer(userMarker);
+userMarker=L.marker([userLat,userLng],{icon:userIcon(via)}).addTo(map);
+map.setView([userLat,userLng],16);
+}
+
 function km(lat1,lon1,lat2,lon2){
 const R=6371;
 const dLat=(lat2-lat1)*Math.PI/180;
 const dLon=(lon2-lon1)*Math.PI/180;
 const a=Math.sin(dLat/2)**2+
-Math.cos(lat1*Math.PI/180)*
-Math.cos(lat2*Math.PI/180)*
+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
 Math.sin(dLon/2)**2;
 return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
 }
 
-/* AGGIORNA UTENTE */
-async function updateUser(lat,lng){
-userLat=lat;
-userLng=lng;
-
-const via=await getStreetName(lat,lng);
-const icon=createUserIcon(via);
-
-if(userMarker){
-userMarker.setLatLng([lat,lng]);
-userMarker.setIcon(icon);
-}else{
-userMarker=L.marker([lat,lng],{icon}).addTo(map);
-}
-
-map.setView([lat,lng],16);
-}
-
-/* WIKIPEDIA QUI INTORNO */
-async function loadWikipediaPOI(lat,lng){
-
-if(popupOpen) return;
-
+/* WIKI AROUND 1KM */
+async function loadPOI(){
 poiLayer.clearLayers();
-
-let radius=800;
-let limit=10;
-let results=[];
+poiData=[];
 
 try{
+const url=`https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${userLat}|${userLng}&gsradius=1000&gslimit=30&format=json&origin=*`;
+const r=await fetch(url);
+const d=await r.json();
 
-while(results.length<5 && radius<=2500){
+poiData=(d.query.geosearch||[]).sort((a,b)=>a.dist-b.dist);
 
-const url=`https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lng}&gsradius=${radius}&gslimit=${limit}&format=json&origin=*`;
-
-const res=await fetch(url);
-const data=await res.json();
-
-results=data.query.geosearch || [];
-
-if(results.length<5){
-radius+=500;
-}
-}
-
-results.sort((a,b)=>a.dist-b.dist);
-results=results.slice(0,10);
-
-results.forEach(function(item){
-
-const marker=L.circleMarker(
-[item.lat,item.lon],
-{
-radius:8,
+poiData.forEach(item=>{
+const marker=L.circleMarker([item.lat,item.lon],{
+radius:7,
 color:"#000",
 weight:2,
-fillColor:"#1e88e5",
-fillOpacity:0.95
-}
-).addTo(poiLayer);
+fillColor:"#2196f3",
+fillOpacity:1
+}).addTo(poiLayer);
 
-marker.bindTooltip(item.title,{
-permanent:true,
-direction:"bottom",
-offset:[0,10]
+marker.on("click",()=>openDetail(item,marker));
 });
 
-marker.on("click",function(){
-
-popupOpen=true;
-
-document.getElementById("poiTitle").innerText=item.title;
-document.getElementById("poiDesc").innerText="POI rilevato da Wikipedia - Qui Intorno";
-document.getElementById("poiDistance").innerText=
-"Distanza: "+(item.dist/1000).toFixed(2)+" km";
-
-document.getElementById("goBtn").onclick=function(){
-window.open(
-"https://it.wikipedia.org/wiki/"+encodeURIComponent(item.title),
-"_blank"
-);
-};
-
-document.getElementById("card").style.display="block";
-});
-
-});
+renderList();
 
 }catch(e){
 console.log(e);
 }
 }
 
-/* REFRESH COMPLETO */
-function refreshAll(){
-if(navigator.geolocation){
-navigator.geolocation.getCurrentPosition(
-function(pos){
-updateUser(pos.coords.latitude,pos.coords.longitude);
-loadWikipediaPOI(pos.coords.latitude,pos.coords.longitude);
-},
-function(err){
-updateUser(userLat,userLng);
-loadWikipediaPOI(userLat,userLng);
-},
-{
-enableHighAccuracy:true,
-timeout:10000,
-maximumAge:0
-}
-);
-}
+function renderList(){
+const list=document.getElementById("poiList");
+list.innerHTML="";
+poiData.forEach(item=>{
+const row=document.createElement("div");
+row.className="poiItem";
+row.innerHTML=`${item.title} - ${(item.dist/1000).toFixed(2)} km`;
+row.onclick=()=>openDetail(item,null);
+list.appendChild(row);
+});
 }
 
-/* AVVIO */
-refreshAll();
+function openDetail(item,marker){
+document.getElementById("poiTitle").innerText=item.title;
+document.getElementById("poiDistance").innerText="Distanza a piedi: "+(item.dist/1000).toFixed(2)+" km";
+document.getElementById("poiTransport").innerText="Mezzo di trasporto: verificabile localmente";
 
-/* OGNI 5 MINUTI */
-setInterval(function(){
-refreshAll();
-},300000);
+document.getElementById("wikiBtn").onclick=()=>{
+window.open("https://it.wikipedia.org/wiki/"+encodeURIComponent(item.title),"_blank");
+};
 
-/* CHIUDI */
+document.getElementById("goBtn").onclick=()=>{
+window.open(`https://www.google.com/maps/dir/${userLat},${userLng}/${item.lat},${item.lon}`,"_blank");
+};
+
+document.getElementById("detailCard").style.display="block";
+}
+
 window.closeCard=function(){
-document.getElementById("card").style.display="none";
-popupOpen=false;
+document.getElementById("detailCard").style.display="none";
 }
+
+window.closePanel=function(){
+document.getElementById("poiPanel").style.display="none";
+}
+
+document.getElementById("plusBtn").onclick=function(){
+const p=document.getElementById("poiPanel");
+p.style.display=(p.style.display==="block")?"none":"block";
+}
+
+/* START */
+await initLocation();
+await drawUser();
+await loadPOI();
+
+/* REFRESH OGNI 5 MIN */
+setInterval(async ()=>{
+await initLocation();
+await drawUser();
+await loadPOI();
+},300000);
 
 });
 </script>
